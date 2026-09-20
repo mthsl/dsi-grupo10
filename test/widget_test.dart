@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:adotai_app/main.dart';
+import 'package:flutter_application_1/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('exibe a identidade visual e o formulário de login',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const AdotaiApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Adotaí'), findsOneWidget);
+    expect(find.text('E-mail'), findsOneWidget);
+    expect(find.text('Senha'), findsOneWidget);
+    expect(find.text('Esqueci minha senha'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('permite acessar cadastro com campo endereço',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const AdotaiApp());
+    await tester.tap(find.text('Criar uma conta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Criar conta'), findsOneWidget);
+    expect(find.text('Endereço'), findsOneWidget);
+  });
+
+  testWidgets('valida e confirma recuperação por e-mail',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const AdotaiApp());
+    await tester.tap(find.text('Esqueci minha senha'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField), 'pessoa@exemplo.com');
+    await tester.tap(find.text('Enviar link de recuperação'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Confira seu e-mail'), findsOneWidget);
+    expect(find.textContaining('pessoa@exemplo.com'), findsOneWidget);
   });
 }
