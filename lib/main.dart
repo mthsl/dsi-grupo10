@@ -21,6 +21,8 @@ class AdotaiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF2E7D62);
+
     return MaterialApp(
       title: 'Adotaí',
       debugShowCheckedModeBanner: false,
