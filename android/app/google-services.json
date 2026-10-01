@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "392801079297",
+    "project_id": "adotai-app-84d81",
+    "storage_bucket": "adotai-app-84d81.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392801079297:android:4b198a45ff163a43f1f000",
+        "android_client_info": {
+          "package_name": "com.example.adotai_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcYOuU1ZIZo6cL3z_BaiEofsSq2CQ7beo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
