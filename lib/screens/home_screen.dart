@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_pet_screen.dart';
+import 'add_shelter_screen.dart';
+import 'pet_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -164,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     String especie = petData['especie'] ?? 'Espécie desconhecida';
                     String porte = petData['porte'] ?? 'Porte desconhecido';
                     String faixaEtaria = petData['faixa_etaria'] ?? 'Idade desconhecida';
+                    String fotoBase64 = petData['fotoBase64'] ?? '';
 
                     return Card(
                       color: Colors.grey[900],
@@ -172,10 +176,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Abrindo detalhes de ${nome.toUpperCase()}...'),
-                              duration: const Duration(seconds: 2),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PetDetailsScreen(petData: petData),
                             ),
                           );
                         },
@@ -189,8 +193,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.grey[800],
                                   borderRadius: BorderRadius.circular(12),
+                                  image: fotoBase64.isNotEmpty
+                                      ? DecorationImage(image: MemoryImage(base64Decode(fotoBase64)), fit: BoxFit.cover)
+                                      : null,
                                 ),
-                                child: const Icon(Icons.pets, color: Colors.grey, size: 40),
+                                child: fotoBase64.isEmpty ? const Icon(Icons.pets, color: Colors.grey, size: 40) : null,
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -230,9 +237,36 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: _userType == 'Voluntário'
           ? FloatingActionButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddPetScreen()),
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.grey[900],
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (context) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.home, color: Colors.white),
+                          title: const Text('Cadastrar Abrigo', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddShelterScreen()));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.pets, color: Colors.white),
+                          title: const Text('Cadastrar Animal', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPetScreen()));
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
               backgroundColor: Theme.of(context).colorScheme.primary,
