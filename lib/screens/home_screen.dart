@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_pet_screen.dart';
 import 'add_shelter_screen.dart';
 import 'pet_details_screen.dart';
+import 'my_shelters_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -179,7 +180,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PetDetailsScreen(petData: petData),
+                              builder: (context) => PetDetailsScreen(
+                                petData: petData,
+                                petId: pets[index].id,
+                              ),
                             ),
                           );
                         },
@@ -262,6 +266,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.pop(context);
                             Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPetScreen()));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.list_alt, color: Colors.white),
+                          title: const Text('Gerenciar Abrigos', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const MySheltersScreen()));
                           },
                         ),
                       ],
