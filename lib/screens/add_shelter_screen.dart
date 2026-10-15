@@ -9,6 +9,7 @@ class AddShelterScreen extends StatefulWidget {
 }
 
 class _AddShelterScreenState extends State<AddShelterScreen> {
+  final _telefoneController = TextEditingController();
   final _nomeController = TextEditingController();
   final _enderecoController = TextEditingController();
   final _latController = TextEditingController();
@@ -31,6 +32,7 @@ class _AddShelterScreenState extends State<AddShelterScreen> {
         'endereco': _enderecoController.text.trim(),
         'latitude': double.tryParse(_latController.text.trim()) ?? 0.0,
         'longitude': double.tryParse(_lngController.text.trim()) ?? 0.0,
+        'telefone': _telefoneController.text.trim(),
       });
 
       if (mounted) {
@@ -86,6 +88,17 @@ class _AddShelterScreenState extends State<AddShelterScreen> {
                 enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
               ),
             ),
+            TextField(
+              controller: _telefoneController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'WhatsApp do Abrigo (Ex: 81999999999)',
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
             const SizedBox(height: 16),
             TextField(
               controller: _latController,

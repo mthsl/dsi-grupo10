@@ -14,12 +14,15 @@ class AddPetScreen extends StatefulWidget {
 
 class _AddPetScreenState extends State<AddPetScreen> {
   final _nomeController = TextEditingController();
+  final _racaController = TextEditingController();
+  final _pesoController = TextEditingController();
+  final _descricaoController = TextEditingController();
+  
   String _especie = 'Cachorro';
   String _porte = 'Médio';
   String _faixaEtaria = 'Adulto';
   String _sexo = 'Macho';
   
-  // Alterado de File para Uint8List (Bytes) para compatibilidade universal
   Uint8List? _imageBytes;
   bool _isLoading = false;
 
@@ -48,7 +51,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Future<void> _pickImage() async {
-    // Adicionado maxWidth e qualidade menor para evitar estourar o limite de 1MB do Firestore
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 40,
@@ -81,6 +83,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
       await FirebaseFirestore.instance.collection('pets').add({
         'nome_busca': _nomeController.text.trim().toLowerCase(),
+        'raca': _racaController.text.trim(),
+        'peso': _pesoController.text.trim(),
+        'descricao': _descricaoController.text.trim(),
         'especie': _especie,
         'porte': _porte,
         'faixa_etaria': _faixaEtaria,
@@ -90,6 +95,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         'fotoBase64': fotoBase64,
         'abrigoId': _abrigoSelecionado?['id'],
         'abrigoNome': _abrigoSelecionado?['nome'],
+        'abrigoTelefone': _abrigoSelecionado?['telefone'] ?? '',
         'abrigoLat': _abrigoSelecionado?['latitude'],
         'abrigoLng': _abrigoSelecionado?['longitude'],
         'createdAt': FieldValue.serverTimestamp(),
@@ -132,7 +138,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
                   borderRadius: BorderRadius.circular(12),
-                  // Renderiza a imagem diretamente a partir da memória
                   image: _imageBytes != null 
                     ? DecorationImage(image: MemoryImage(_imageBytes!), fit: BoxFit.cover) 
                     : null,
@@ -160,11 +165,45 @@ class _AddPetScreenState extends State<AddPetScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            TextField(
+              controller: _racaController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Raça', 
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _pesoController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Peso (kg)', 
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _descricaoController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Descrição/Bio', 
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
             _buildDropdown('Espécie', _especies, _especie, (val) => setState(() => _especie = val!)),
             const SizedBox(height: 16),
             _buildDropdown('Porte', _portes, _porte, (val) => setState(() => _porte = val!)),
             const SizedBox(height: 16),
             _buildDropdown('Faixa Etária', _idades, _faixaEtaria, (val) => setState(() => _faixaEtaria = val!)),
+            const SizedBox(height: 16),
+            _buildDropdown('Sexo', _sexos, _sexo, (val) => setState(() => _sexo = val!)),
             const SizedBox(height: 16),
             if (_abrigos.isNotEmpty)
               Column(
