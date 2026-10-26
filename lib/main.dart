@@ -1,51 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // Importa as opções configuradas automaticamente
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'firebase_options.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_navigation_screen.dart';
 
 void main() async {
+  // Garante que o Flutter inicializou antes de rodar código nativo (Firebase e SharedPreferences)
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializa o Firebase passando as configurações do seu projeto
+  // Inicializa o Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Verifica no SharedPreferences se o usuário já passou pelo Onboarding
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool viuOnboarding = prefs.getBool('viuOnboarding') ?? false;
 
-  runApp(const AdotaiApp());
+  runApp(MyApp(viuOnboarding: viuOnboarding));
 }
 
-class AdotaiApp extends StatelessWidget {
-  const AdotaiApp({super.key});
+class MyApp extends StatelessWidget {
+  final bool viuOnboarding;
+
+  const MyApp({super.key, required this.viuOnboarding});
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF2E7D62);
-
     return MaterialApp(
       title: 'Adotaí',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFF141519), // Fundo escuro
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF1E88E5), // Azul vibrante dos botões
+          primary: Colors.orange, // Sua cor principal
+          background: Color(0xFF121212),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.05),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30.0),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF121212),
+          elevation: 0,
+          centerTitle: true,
         ),
       ),
-      initialRoute: '/login',
+      // A tela inicial depende da variável viuOnboarding salva no SharedPreferences
+      home: viuOnboarding ? const AuthChecker() : const OnboardingScreen(),
+      
+      // Definição das rotas nomeadas
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/main': (context) => const MainNavigationScreen(),
+      },
+    );
+  }
+}
+
+// Widget que escuta as mudanças de autenticação no Firebase
+class AuthChecker extends StatelessWidget {
+  const AuthChecker({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Exibe um carregamento enquanto verifica o estado da autenticação
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Colors.orange),
+            ),
+          );
+        }
+
+        // Se o Firebase identificar que existe um usuário logado
+        if (snapshot.hasData && snapshot.data != null) {
+          return const MainNavigationScreen();
+        }
+
+        // Caso contrário, redireciona para a tela de Login
+        return const LoginScreen();
       },
     );
   }
