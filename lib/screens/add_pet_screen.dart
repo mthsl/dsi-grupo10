@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controllers/add_pet_controller.dart';
 import '../models/shelter_model.dart';
+import 'add_shelter_screen.dart';
 
 /// Tela de Cadastro de Pet (View pura - SRP / Controller).
 class AddPetScreen extends StatefulWidget {
@@ -81,16 +82,18 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
     if (!mounted) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+
     if (success) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Pet cadastrado com sucesso!'),
           backgroundColor: Colors.green,
         ),
       );
+      Navigator.pop(context);
     } else if (_controller.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(_controller.errorMessage!),
           backgroundColor: Colors.redAccent,
@@ -117,6 +120,52 @@ class _AddPetScreenState extends State<AddPetScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Alerta caso o voluntário ainda não tenha criado abrigos
+                if (!_controller.isLoading && _controller.shelters.isEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text(
+                              'Atenção, voluntário!',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Você só pode cadastrar animais em abrigos que você mesmo criou. Cadastre seu primeiro abrigo abaixo:',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const AddShelterScreen()),
+                            );
+                            _controller.loadShelters();
+                          },
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          label: const Text('Cadastrar Meu Abrigo Agora', style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
                 // Seleção de Foto
                 GestureDetector(
                   onTap: _pickImage,
@@ -144,14 +193,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Abrigo
+                // Seleção do Abrigo (Apenas os criados pelo voluntário)
                 if (_controller.shelters.isNotEmpty)
                   DropdownButtonFormField<ShelterModel>(
                     initialValue: _controller.selectedShelter,
                     dropdownColor: const Color(0xFF1E1E1E),
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: 'Selecione o Abrigo',
+                      labelText: 'Selecione Seu Abrigo',
                       labelStyle: const TextStyle(color: Colors.white70),
                       filled: true,
                       fillColor: const Color(0xFF1E1E1E),
@@ -185,7 +234,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 const SizedBox(height: 32),
 
                 ElevatedButton(
-                  onPressed: _controller.isLoading ? null : _cadastrar,
+                  onPressed: (_controller.isLoading || _controller.shelters.isEmpty) ? null : _cadastrar,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),

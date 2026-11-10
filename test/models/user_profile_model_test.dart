@@ -13,6 +13,7 @@ void main() {
       latitude: -8.0476,
       longitude: -34.8770,
       userType: 'Voluntário',
+      photoBase64: 'base64_avatar_mock',
       favorites: ['pet_1', 'pet_2'],
     );
 
@@ -24,6 +25,12 @@ void main() {
 
     test('deve sanitizar o número de WhatsApp em sanitizedWhatsApp', () {
       expect(user.sanitizedWhatsApp, '81988887777');
+    });
+
+    test('deve verificar se possui foto de perfil', () {
+      expect(user.hasPhoto, isTrue);
+      final semFoto = user.copyWith(photoBase64: '');
+      expect(semFoto.hasPhoto, isFalse);
     });
 
     test('deve validar coordenadas geográficas', () {
@@ -46,6 +53,7 @@ void main() {
       expect(recovered.latitude, user.latitude);
       expect(recovered.longitude, user.longitude);
       expect(recovered.userType, user.userType);
+      expect(recovered.photoBase64, user.photoBase64);
       expect(recovered.favorites, user.favorites);
     });
   });
@@ -58,14 +66,19 @@ void main() {
       latitude: -8.0400,
       longitude: -34.9000,
       telefone: '(81) 99999-1234',
+      chavePix: 'ongesperanca@pix.com',
+      criadorId: 'voluntario_joao',
     );
 
-    test('deve validar coordenadas do abrigo', () {
+    test('deve validar coordenadas, chave Pix e criador do abrigo', () {
       expect(shelter.hasValidCoordinates, isTrue);
       expect(shelter.sanitizedPhone, '81999991234');
+      expect(shelter.hasPix, isTrue);
+      expect(shelter.isCreatedBy('voluntario_joao'), isTrue);
+      expect(shelter.isCreatedBy('outro_usuario'), isFalse);
     });
 
-    test('deve serializar e desserializar abrigo', () {
+    test('deve serializar e desserializar abrigo com Pix e Criador', () {
       final map = shelter.toMap();
       final from = ShelterModel.fromMap(map, id: shelter.id);
       expect(from.nome, shelter.nome);
@@ -73,6 +86,8 @@ void main() {
       expect(from.latitude, shelter.latitude);
       expect(from.longitude, shelter.longitude);
       expect(from.telefone, shelter.telefone);
+      expect(from.chavePix, shelter.chavePix);
+      expect(from.criadorId, shelter.criadorId);
     });
   });
 }

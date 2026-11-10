@@ -1,13 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../controllers/profile_controller.dart';
+import '../widgets/interactive_location_picker.dart';
 import 'login_screen.dart';
 import 'my_shelters_screen.dart';
 
 /// Tela de Perfil do Usuário (View pura - SRP / GRASP Controller).
-///
-/// Responsabilidades:
-/// - Coletar entradas do usuário e repassar ao ProfileController.
-/// - Exibir dados cadastrais de forma reativa sem acoplamento a banco de dados.
 class ProfileScreen extends StatefulWidget {
   final ProfileController? controller;
 
@@ -58,6 +57,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _latitudeController.text = p.latitude == 0.0 ? '' : p.latitude.toString();
       _longitudeController.text = p.longitude == 0.0 ? '' : p.longitude.toString();
       _initializedFields = true;
+    }
+  }
+
+  Future<void> _trocarFotoPerfil() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 40,
+      maxWidth: 400,
+    );
+
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      final base64String = base64Encode(bytes);
+      _controller.setPhotoBase64(base64String);
     }
   }
 
@@ -117,10 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       prefixIcon: Icon(icon, color: Colors.orange, size: 20),
       filled: true,
       fillColor: const Color(0xFF1E1E1E),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: Colors.orange, width: 1.5),
@@ -135,6 +146,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       listenable: _controller,
       builder: (context, _) {
         _syncFieldsWithProfile();
+
+        final hasPhoto = _controller.currentPhotoBase64.isNotEmpty;
 
         return Scaffold(
           backgroundColor: const Color(0xFF121212),
@@ -158,22 +171,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Avatar e Tipo de Perfil
+                        // Avatar Editável
                         Center(
                           child: Column(
                             children: [
-                              const CircleAvatar(
-                                radius: 46,
-                                backgroundColor: Color(0xFF2A2A2A),
-                                child: Icon(Icons.person, size: 50, color: Colors.orange),
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 52,
+                                    backgroundColor: const Color(0xFF2A2A2A),
+                                    backgroundImage: hasPhoto
+                                        ? MemoryImage(base64Decode(_controller.currentPhotoBase64))
+                                        : null,
+                                    child: !hasPhoto
+                                        ? const Icon(Icons.person, size: 56, color: Colors.orange)
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: GestureDetector(
+                                      onTap: _trocarFotoPerfil,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: const Color(0xFF121212), width: 3),
+                                        ),
+                                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 _controller.userEmail,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                ),
+                                style: const TextStyle(color: Colors.white70, fontSize: 15),
                               ),
                               const SizedBox(height: 6),
                               Container(
@@ -203,11 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         const Text(
                           'Dados Cadastrais',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         const SizedBox(height: 6),
                         const Text(
@@ -251,72 +282,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // Campo 3: Endereço Completo
-                        TextFormField(
-                          controller: _enderecoController,
-                          style: const TextStyle(color: Colors.white),
-                          maxLines: 2,
-                          decoration: _buildInputDecoration(
-                            label: 'Endereço completo',
-                            icon: Icons.location_on_outlined,
-                            hint: 'Ex: Rua Exemplo, 123, Bairro, Cidade - UF',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Por favor, informe o endereço completo.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Campos 4 e 5: Latitude e Longitude
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _latitudeController,
-                                style: const TextStyle(color: Colors.white),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                decoration: _buildInputDecoration(
-                                  label: 'Latitude',
-                                  icon: Icons.my_location,
-                                  hint: 'Ex: -8.0476',
-                                ),
-                                validator: (val) {
-                                  if (val != null && val.trim().isNotEmpty) {
-                                    if (double.tryParse(val.trim().replaceAll(',', '.')) == null) {
-                                      return 'Inválido';
-                                    }
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _longitudeController,
-                                style: const TextStyle(color: Colors.white),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                decoration: _buildInputDecoration(
-                                  label: 'Longitude',
-                                  icon: Icons.explore_outlined,
-                                  hint: 'Ex: -34.8770',
-                                ),
-                                validator: (val) {
-                                  if (val != null && val.trim().isNotEmpty) {
-                                    if (double.tryParse(val.trim().replaceAll(',', '.')) == null) {
-                                      return 'Inválido';
-                                    }
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
+                        // Campo 3, 4, 5 e Mapa: InteractiveLocationPicker
+                        InteractiveLocationPicker(
+                          enderecoController: _enderecoController,
+                          latitudeController: _latitudeController,
+                          longitudeController: _longitudeController,
+                          labelEndereco: 'Seu Endereço Completo',
                         ),
                         const SizedBox(height: 28),
 

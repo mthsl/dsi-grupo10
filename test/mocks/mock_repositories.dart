@@ -77,7 +77,15 @@ class MockShelterRepository implements IShelterRepository {
   Stream<List<ShelterModel>> watchShelters() => Stream.value(List.unmodifiable(shelters));
 
   @override
+  Stream<List<ShelterModel>> watchSheltersByCreator(String creatorId) =>
+      Stream.value(List.unmodifiable(shelters.where((s) => s.criadorId == creatorId)));
+
+  @override
   Future<List<ShelterModel>> getShelters() async => List.unmodifiable(shelters);
+
+  @override
+  Future<List<ShelterModel>> getSheltersByCreator(String creatorId) async =>
+      shelters.where((s) => s.criadorId == creatorId).toList();
 
   @override
   Future<ShelterModel?> getShelterById(String id) async {

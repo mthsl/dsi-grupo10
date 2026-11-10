@@ -20,10 +20,34 @@ class FirebaseShelterRepository implements IShelterRepository {
   }
 
   @override
+  Stream<List<ShelterModel>> watchSheltersByCreator(String creatorId) {
+    if (creatorId.isEmpty) return Stream.value(const []);
+
+    return _collection.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => ShelterModel.fromMap(doc.data(), id: doc.id))
+          // fromMap já resolve criadorId a partir dos campos legados
+          // (voluntarioId/userId), mantendo compatibilidade retroativa.
+          .where((shelter) => shelter.criadorId == creatorId)
+          .toList();
+    });
+  }
+
+  @override
   Future<List<ShelterModel>> getShelters() async {
     final snapshot = await _collection.get();
     return snapshot.docs
         .map((doc) => ShelterModel.fromMap(doc.data(), id: doc.id))
+        .toList();
+  }
+
+  @override
+  Future<List<ShelterModel>> getSheltersByCreator(String creatorId) async {
+    if (creatorId.isEmpty) return const [];
+    final snapshot = await _collection.get();
+    return snapshot.docs
+        .map((doc) => ShelterModel.fromMap(doc.data(), id: doc.id))
+        .where((shelter) => shelter.criadorId == creatorId)
         .toList();
   }
 

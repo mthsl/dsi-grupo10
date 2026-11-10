@@ -16,6 +16,7 @@ class UserProfileModel {
   final double latitude;
   final double longitude;
   final String userType;
+  final String photoBase64;
   final List<String> favorites;
 
   const UserProfileModel({
@@ -27,6 +28,7 @@ class UserProfileModel {
     this.latitude = 0.0,
     this.longitude = 0.0,
     this.userType = 'Adotante',
+    this.photoBase64 = '',
     this.favorites = const [],
   });
 
@@ -35,6 +37,9 @@ class UserProfileModel {
 
   /// Information Expert: Sabe se o usuário favoritou um determinado pet.
   bool hasFavorite(String petId) => favorites.contains(petId);
+
+  /// Verifica se possui foto de perfil cadastrada.
+  bool get hasPhoto => photoBase64.trim().isNotEmpty;
 
   /// Verifica se possui coordenadas válidas para cálculo de proximidade.
   bool get hasValidCoordinates =>
@@ -58,6 +63,7 @@ class UserProfileModel {
     double? latitude,
     double? longitude,
     String? userType,
+    String? photoBase64,
     List<String>? favorites,
   }) {
     return UserProfileModel(
@@ -69,6 +75,7 @@ class UserProfileModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       userType: userType ?? this.userType,
+      photoBase64: photoBase64 ?? this.photoBase64,
       favorites: favorites != null ? List.unmodifiable(favorites) : this.favorites,
     );
   }
@@ -96,6 +103,7 @@ class UserProfileModel {
       latitude: parseDouble(map['latitude']),
       longitude: parseDouble(map['longitude']),
       userType: map['userType'] ?? 'Adotante',
+      photoBase64: map['photoBase64'] ?? '',
       favorites: List.unmodifiable(parsedFavorites),
     );
   }
@@ -106,12 +114,13 @@ class UserProfileModel {
       'name': name,
       'email': email,
       'whatsapp': whatsapp,
-      'phone': whatsapp, // Garante interoperabilidade com legado
+      'phone': whatsapp,
       'address': address,
-      'endereco': address, // Garante interoperabilidade com legado
+      'endereco': address,
       'latitude': latitude,
       'longitude': longitude,
       'userType': userType,
+      'photoBase64': photoBase64,
       'favorites': favorites,
     };
   }
@@ -124,8 +133,9 @@ class UserProfileModel {
           id == other.id &&
           name == other.name &&
           email == other.email &&
+          photoBase64 == other.photoBase64 &&
           userType == other.userType;
 
   @override
-  int get hashCode => id.hashCode ^ name.hashCode ^ email.hashCode;
+  int get hashCode => id.hashCode ^ name.hashCode ^ email.hashCode ^ photoBase64.hashCode;
 }

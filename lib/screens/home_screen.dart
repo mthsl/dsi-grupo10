@@ -7,10 +7,6 @@ import 'add_shelter_screen.dart';
 import 'pet_details_screen.dart';
 
 /// Tela Principal (View pura - SRP / GRASP High Cohesion).
-///
-/// Responsabilidades:
-/// - Exibir layout visual e receber toques do usuário.
-/// - Delegar regras de negócio, filtragem e persistência ao HomeController.
 class HomeScreen extends StatefulWidget {
   final HomeController? controller;
 
@@ -40,7 +36,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _abrirModalFiltros() {
+  Future<void> _abrirModalFiltros() async {
+    // Garante que abrigos recém-cadastrados apareçam no filtro "Seus Animais".
+    await _controller.refreshUserShelters();
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -53,102 +53,147 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filtros Avançados',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Filtro de Espécie
-                  _buildSectionTitle('Espécie'),
-                  _buildFilterOptions(
-                    options: ['Cachorro', 'Gato', 'Outro'],
-                    selected: _controller.selectedSpecies,
-                    onSelected: (val) {
-                      setModalState(() => _controller.setSpeciesFilter(val));
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Filtro de Porte
-                  _buildSectionTitle('Porte'),
-                  _buildFilterOptions(
-                    options: ['Pequeno', 'Médio', 'Grande'],
-                    selected: _controller.selectedSize,
-                    onSelected: (val) {
-                      setModalState(() => _controller.setSizeFilter(val));
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Filtro de Sexo
-                  _buildSectionTitle('Sexo'),
-                  _buildFilterOptions(
-                    options: ['Macho', 'Fêmea'],
-                    selected: _controller.selectedGender,
-                    onSelected: (val) {
-                      setModalState(() => _controller.setGenderFilter(val));
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Filtro de Idade
-                  _buildSectionTitle('Idade'),
-                  _buildFilterOptions(
-                    options: ['Filhote', 'Adulto', 'Idoso'],
-                    selected: _controller.selectedAge,
-                    onSelected: (val) {
-                      setModalState(() => _controller.setAgeFilter(val));
-                    },
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Ações do Modal
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setModalState(() => _controller.clearAllFilters());
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white70,
-                            side: const BorderSide(color: Colors.white24),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          ),
-                          child: const Text('Limpar'),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Filtros Avançados',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70),
                           onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          ),
-                          child: const Text('Aplicar Filtros', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 1. PRIMEIRO FILTRO: "Seus Animais" (Exclusivo para Voluntários)
+                    if (_controller.isVolunteer) ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, color: Colors.orange, size: 18),
+                          const SizedBox(width: 6),
+                          _buildSectionTitle('Seus Animais'),
+                        ],
                       ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Todos os meus cadastros'),
+                            selected: _controller.showOnlyMyPets,
+                            onSelected: (bool selected) {
+                              setModalState(() => _controller.setShowOnlyMyPets(selected));
+                            },
+                            selectedColor: Colors.orange,
+                            backgroundColor: const Color(0xFF2A2A2A),
+                            labelStyle: TextStyle(color: _controller.showOnlyMyPets ? Colors.white : Colors.white70),
+                          ),
+                          ..._controller.userShelters.map((shelter) {
+                            final isSel = _controller.selectedMyShelterId == shelter.id;
+                            return ChoiceChip(
+                              label: Text('Abrigo: ${shelter.nome}'),
+                              selected: isSel,
+                              onSelected: (bool selected) {
+                                setModalState(() => _controller.setSelectedMyShelterId(selected ? shelter.id : null));
+                              },
+                              selectedColor: Colors.orange,
+                              backgroundColor: const Color(0xFF2A2A2A),
+                              labelStyle: TextStyle(color: isSel ? Colors.white : Colors.white70),
+                            );
+                          }),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.white12),
+                      const SizedBox(height: 8),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
+
+                    // 2. Filtro de Espécie
+                    _buildSectionTitle('Espécie'),
+                    _buildFilterOptions(
+                      options: ['Cachorro', 'Gato', 'Outro'],
+                      selected: _controller.selectedSpecies,
+                      onSelected: (val) {
+                        setModalState(() => _controller.setSpeciesFilter(val));
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 3. Filtro de Porte
+                    _buildSectionTitle('Porte'),
+                    _buildFilterOptions(
+                      options: ['Pequeno', 'Médio', 'Grande'],
+                      selected: _controller.selectedSize,
+                      onSelected: (val) {
+                        setModalState(() => _controller.setSizeFilter(val));
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 4. Filtro de Sexo
+                    _buildSectionTitle('Sexo'),
+                    _buildFilterOptions(
+                      options: ['Macho', 'Fêmea'],
+                      selected: _controller.selectedGender,
+                      onSelected: (val) {
+                        setModalState(() => _controller.setGenderFilter(val));
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 5. Filtro de Idade
+                    _buildSectionTitle('Idade'),
+                    _buildFilterOptions(
+                      options: ['Filhote', 'Adulto', 'Idoso'],
+                      selected: _controller.selectedAge,
+                      onSelected: (val) {
+                        setModalState(() => _controller.setAgeFilter(val));
+                      },
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Ações do Modal
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setModalState(() => _controller.clearAllFilters());
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white70,
+                              side: const BorderSide(color: Colors.white24),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                            child: const Text('Limpar'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                            child: const Text('Aplicar Filtros', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
             );
           },

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,10 +17,6 @@ import '../services/favorite_service.dart';
 import 'edit_pet_screen.dart';
 
 /// Tela de Detalhes do Pet (View pura - SRP / DIP).
-///
-/// Refatorada para receber modelo de domínio PetModel, utilizar repositórios
-/// abstratos para carregar dados do abrigo e deletar o anúncio,
-/// e permitir editar via EditPetScreen.
 class PetDetailsScreen extends StatefulWidget {
   final PetModel pet;
   final IPetRepository? petRepository;
@@ -102,6 +99,17 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         );
       }
     }
+  }
+
+  void _copiarChavePix(String chavePix) {
+    Clipboard.setData(ClipboardData(text: chavePix));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Chave Pix copiada: $chavePix'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _deletarPet() async {
@@ -251,7 +259,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Seção do Abrigo e Mapa
+                  // Seção do Abrigo, Pix e Mapa
                   if (_isLoadingShelter)
                     const Center(child: CircularProgressIndicator(color: Colors.orange))
                   else if (_shelter != null) ...[
@@ -267,6 +275,49 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     if (_shelter!.endereco.isNotEmpty)
                       Text(_shelter!.endereco, style: const TextStyle(color: Colors.white54, fontSize: 13)),
                     const SizedBox(height: 12),
+
+                    // Chave Pix para Doações
+                    if (_shelter!.hasPix) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.pix, color: Colors.greenAccent, size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Apoie este abrigo com Pix:',
+                                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                                  ),
+                                  Text(
+                                    _shelter!.chavePix,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy, color: Colors.greenAccent),
+                              tooltip: 'Copiar Chave Pix',
+                              onPressed: () => _copiarChavePix(_shelter!.chavePix),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
 
                     if (_shelter!.hasValidCoordinates)
                       Container(
@@ -304,7 +355,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                   ],
                   const SizedBox(height: 32),
 
-                  // Ações: Contatar ou Editar/Deletar se for proprietário
+                  // Ações: Contatar ou Editar/Deletar
                   if (!_isOwner) ...[
                     ElevatedButton.icon(
                       onPressed: () {

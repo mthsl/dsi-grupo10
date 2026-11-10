@@ -6,11 +6,6 @@ import '../repositories/firebase/firebase_auth_repository.dart';
 import '../repositories/firebase/firebase_user_repository.dart';
 
 /// Controlador da tela de Perfil (GRASP Controller / SOLID SRP / DIP).
-///
-/// Responsabilidades:
-/// - Gerenciar ciclo de vida do carregamento e edição do perfil do usuário.
-/// - Validar dados de entrada de forma determinística.
-/// - Realizar persistência delegando ao repositório abstrato IUserRepository.
 class ProfileController extends ChangeNotifier {
   final IUserRepository _userRepository;
   final IAuthRepository _authRepository;
@@ -21,6 +16,7 @@ class ProfileController extends ChangeNotifier {
   String? _successMessage;
 
   UserProfileModel? _profile;
+  String _currentPhotoBase64 = '';
 
   ProfileController({
     IUserRepository? userRepository,
@@ -33,10 +29,16 @@ class ProfileController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   UserProfileModel? get profile => _profile;
+  String get currentPhotoBase64 => _currentPhotoBase64;
 
   String get userEmail => _authRepository.currentUserEmail ?? _profile?.email ?? '';
   String get userType => _profile?.userType ?? 'Adotante';
   bool get isVolunteer => _profile?.isVolunteer ?? false;
+
+  void setPhotoBase64(String base64) {
+    _currentPhotoBase64 = base64;
+    notifyListeners();
+  }
 
   /// Carrega os dados do perfil do usuário autenticado.
   Future<void> loadProfile() async {
@@ -59,6 +61,7 @@ class ProfileController extends ChangeNotifier {
         name: '',
         email: _authRepository.currentUserEmail ?? '',
       );
+      _currentPhotoBase64 = _profile!.photoBase64;
     } catch (e) {
       _errorMessage = 'Falha ao carregar perfil: $e';
     } finally {
@@ -74,6 +77,7 @@ class ProfileController extends ChangeNotifier {
     required String address,
     required String latitudeStr,
     required String longitudeStr,
+    String? photoBase64,
   }) async {
     final uid = _authRepository.currentUserId;
     if (uid == null || uid.isEmpty) {
@@ -108,6 +112,8 @@ class ProfileController extends ChangeNotifier {
         return false;
       }
 
+      final finalPhoto = photoBase64 ?? _currentPhotoBase64;
+
       final updatedProfile = (_profile ??
               UserProfileModel(
                 id: uid,
@@ -120,10 +126,12 @@ class ProfileController extends ChangeNotifier {
         address: address.trim(),
         latitude: parsedLat,
         longitude: parsedLng,
+        photoBase64: finalPhoto,
       );
 
       await _userRepository.saveUserProfile(updatedProfile);
       _profile = updatedProfile;
+      _currentPhotoBase64 = finalPhoto;
       _successMessage = 'Perfil atualizado com sucesso!';
       _isSaving = false;
       notifyListeners();

@@ -32,24 +32,27 @@ class AddPetController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<ShelterModel> get shelters => _shelters;
   ShelterModel? get selectedShelter => _selectedShelter;
+  bool get hasShelters => _shelters.isNotEmpty;
 
   void setSelectedShelter(ShelterModel? shelter) {
     _selectedShelter = shelter;
     notifyListeners();
   }
 
+  /// Carrega apenas os abrigos criados pelo voluntário logado (Ownership / RBAC).
   Future<void> loadShelters() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _shelters = await _shelterRepository.getShelters();
+      final currentUserId = _authRepository.currentUserId ?? '';
+      _shelters = await _shelterRepository.getSheltersByCreator(currentUserId);
       if (_shelters.isNotEmpty && _selectedShelter == null) {
         _selectedShelter = _shelters.first;
       }
     } catch (e) {
-      _errorMessage = 'Falha ao carregar abrigos: $e';
+      _errorMessage = 'Falha ao carregar seus abrigos: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -67,6 +70,12 @@ class AddPetController extends ChangeNotifier {
     required String descricao,
     Uint8List? imageBytes,
   }) async {
+    if (_shelters.isEmpty) {
+      _errorMessage = 'Você precisa cadastrar um abrigo antes de cadastrar animais.';
+      notifyListeners();
+      return false;
+    }
+
     if (nome.trim().isEmpty) {
       _errorMessage = 'Por favor, informe o nome do pet.';
       notifyListeners();

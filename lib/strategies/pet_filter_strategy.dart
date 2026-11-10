@@ -99,17 +99,40 @@ class StatusFilterStrategy implements IPetFilterStrategy {
   String get label => 'Status: $status';
 }
 
+/// Estratégia de filtro: "Seus Animais" cadastrados pelo voluntário.
+class VolunteerFilterStrategy implements IPetFilterStrategy {
+  final String volunteerId;
+
+  const VolunteerFilterStrategy(this.volunteerId);
+
+  @override
+  bool isSatisfiedBy(PetModel pet) =>
+      volunteerId.isNotEmpty && pet.voluntarioId == volunteerId;
+
+  @override
+  String get label => 'Meus Cadastros';
+}
+
+/// Estratégia de filtro: Animais vinculados a um abrigo específico do voluntário.
+class ShelterFilterStrategy implements IPetFilterStrategy {
+  final String shelterId;
+  final String shelterName;
+
+  const ShelterFilterStrategy(this.shelterId, [this.shelterName = 'Abrigo']);
+
+  @override
+  bool isSatisfiedBy(PetModel pet) =>
+      shelterId.isNotEmpty && pet.abrigoId == shelterId;
+
+  @override
+  String get label => 'Abrigo: $shelterName';
+}
+
 // ---------------------------------------------------------------------------
 // Pipeline Funcional (Functional Programming - Hackr.io)
 // ---------------------------------------------------------------------------
 
 /// Função Pura: Aplica uma lista de estratégias de filtro sobre uma coleção de pets.
-///
-/// Propriedades:
-/// 1. Determinismo absoluto: a mesma lista de entrada com as mesmas estratégias
-///    sempre produzirá exatamente a mesma lista filtrada.
-/// 2. Sem efeitos colaterais: não altera a lista original nem acessa recursos de I/O.
-/// 3. Utiliza funções de alta ordem (where, every) no estilo declarativo.
 List<PetModel> filterPets(
   List<PetModel> pets,
   List<IPetFilterStrategy> strategies,

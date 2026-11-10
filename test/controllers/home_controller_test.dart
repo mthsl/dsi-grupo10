@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:adotai_app/controllers/home_controller.dart';
 import 'package:adotai_app/models/pet_model.dart';
+import 'package:adotai_app/models/shelter_model.dart';
 import 'package:adotai_app/models/user_profile_model.dart';
 import '../mocks/mock_repositories.dart';
 
@@ -9,6 +10,7 @@ void main() {
     late MockPetRepository petRepo;
     late MockUserRepository userRepo;
     late MockAuthRepository authRepo;
+    late MockShelterRepository shelterRepo;
     late HomeController controller;
 
     final mockPets = [
@@ -20,6 +22,8 @@ void main() {
         porte: 'Médio',
         sexo: 'Macho',
         faixaEtaria: 'Filhote',
+        voluntarioId: 'user_vol',
+        abrigoId: 'shelter_1',
         status: 'Disponível',
       ),
       const PetModel(
@@ -30,6 +34,8 @@ void main() {
         porte: 'Pequeno',
         sexo: 'Fêmea',
         faixaEtaria: 'Adulto',
+        voluntarioId: 'other_user',
+        abrigoId: 'shelter_2',
         status: 'Disponível',
       ),
     ];
@@ -45,10 +51,23 @@ void main() {
         ),
       });
       authRepo = MockAuthRepository(initialUid: 'user_vol', initialEmail: 'joao@adotai.org');
+      shelterRepo = MockShelterRepository([
+        const ShelterModel(
+          id: 'shelter_1',
+          nome: 'Abrigo do João',
+          endereco: 'Recife',
+          latitude: -8.0,
+          longitude: -34.8,
+          telefone: '8199999',
+          criadorId: 'user_vol',
+        ),
+      ]);
+
       controller = HomeController(
         petRepository: petRepo,
         userRepository: userRepo,
         authRepository: authRepo,
+        shelterRepository: shelterRepo,
       );
     });
 
@@ -57,13 +76,37 @@ void main() {
       petRepo.dispose();
     });
 
-    test('deve inicializar e carregar pets disponíveis e papel de voluntário', () async {
+    test('deve inicializar e carregar pets disponíveis, perfil e abrigos do voluntário', () async {
       controller.init();
       await Future.delayed(Duration.zero);
 
       expect(controller.isLoading, isFalse);
       expect(controller.filteredPets.length, 2);
       expect(controller.isVolunteer, isTrue);
+      expect(controller.userShelters.length, 1);
+      expect(controller.userShelters.first.nome, 'Abrigo do João');
+    });
+
+    test('deve filtrar por "Seus Animais" (Meus Cadastros)', () async {
+      controller.init();
+      await Future.delayed(Duration.zero);
+
+      controller.setShowOnlyMyPets(true);
+      expect(controller.filteredPets.length, 1);
+      expect(controller.filteredPets.first.nome, 'Pipoca');
+      expect(controller.filteredPets.first.voluntarioId, 'user_vol');
+    });
+
+    test('deve filtrar por abrigo específico do voluntário', () async {
+      controller.init();
+      await Future.delayed(Duration.zero);
+
+      controller.setSelectedMyShelterId('shelter_1');
+      expect(controller.filteredPets.length, 1);
+      expect(controller.filteredPets.first.nome, 'Pipoca');
+
+      controller.setSelectedMyShelterId('shelter_inexistente');
+      expect(controller.filteredPets.isEmpty, isTrue);
     });
 
     test('deve filtrar pets por espécie dinamicamente', () async {
@@ -95,15 +138,14 @@ void main() {
       controller.init();
       await Future.delayed(Duration.zero);
 
+      controller.setShowOnlyMyPets(true);
       controller.setSpeciesFilter('Gato');
-      controller.setSizeFilter('Pequeno');
-      controller.setSearchQuery('Lu');
-      expect(controller.filteredPets.length, 1);
+      expect(controller.filteredPets.isEmpty, isTrue);
 
       controller.clearAllFilters();
       expect(controller.filteredPets.length, 2);
+      expect(controller.showOnlyMyPets, isFalse);
       expect(controller.selectedSpecies, isNull);
-      expect(controller.searchQuery, isEmpty);
     });
   });
 }

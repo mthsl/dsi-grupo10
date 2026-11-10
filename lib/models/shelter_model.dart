@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 ///
 /// Atende aos princípios:
 /// - Functional Programming: Imutabilidade (@immutable, campos final, copyWith, funções puras).
-/// - GRASP Information Expert: Especialista nos dados de geolocalização e contato do abrigo.
+/// - GRASP Information Expert: Especialista nos dados de geolocalização, Pix e contato do abrigo.
 /// - SOLID SRP: Responsabilidade única de representar o Abrigo.
 @immutable
 class ShelterModel {
@@ -14,6 +14,8 @@ class ShelterModel {
   final double latitude;
   final double longitude;
   final String telefone;
+  final String chavePix;
+  final String criadorId;
 
   const ShelterModel({
     required this.id,
@@ -22,6 +24,8 @@ class ShelterModel {
     required this.latitude,
     required this.longitude,
     required this.telefone,
+    this.chavePix = '',
+    this.criadorId = '',
   });
 
   /// Verifica se possui coordenadas geográficas válidas (Information Expert).
@@ -36,6 +40,12 @@ class ShelterModel {
   /// Retorna o número de WhatsApp formatado/sanitizado (Pure Function).
   String get sanitizedPhone => telefone.replaceAll(RegExp(r'[^0-9]'), '');
 
+  /// Verifica se o usuário informado é o criador deste abrigo (Information Expert).
+  bool isCreatedBy(String userId) => criadorId.isNotEmpty && criadorId == userId;
+
+  /// Verifica se o abrigo possui chave Pix cadastrada.
+  bool get hasPix => chavePix.trim().isNotEmpty;
+
   /// Padrão Imutável: Cria uma nova instância com valores alterados (Functional Programming).
   ShelterModel copyWith({
     String? id,
@@ -44,6 +54,8 @@ class ShelterModel {
     double? latitude,
     double? longitude,
     String? telefone,
+    String? chavePix,
+    String? criadorId,
   }) {
     return ShelterModel(
       id: id ?? this.id,
@@ -52,6 +64,8 @@ class ShelterModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       telefone: telefone ?? this.telefone,
+      chavePix: chavePix ?? this.chavePix,
+      criadorId: criadorId ?? this.criadorId,
     );
   }
 
@@ -70,6 +84,8 @@ class ShelterModel {
       latitude: parseDouble(map['latitude']),
       longitude: parseDouble(map['longitude']),
       telefone: map['telefone'] ?? map['whatsapp'] ?? '',
+      chavePix: map['chavePix'] ?? map['pix'] ?? '',
+      criadorId: map['criadorId'] ?? map['voluntarioId'] ?? map['userId'] ?? '',
     );
   }
 
@@ -81,6 +97,9 @@ class ShelterModel {
       'latitude': latitude,
       'longitude': longitude,
       'telefone': telefone,
+      'chavePix': chavePix,
+      'criadorId': criadorId,
+      'voluntarioId': criadorId, // Compatibilidade com consultas legadas
     };
   }
 
@@ -91,9 +110,16 @@ class ShelterModel {
           runtimeType == other.runtimeType &&
           id == other.id &&
           nome == other.nome &&
+          chavePix == other.chavePix &&
+          criadorId == other.criadorId &&
           latitude == other.latitude &&
           longitude == other.longitude;
 
   @override
-  int get hashCode => id.hashCode ^ nome.hashCode ^ latitude.hashCode;
+  int get hashCode =>
+      id.hashCode ^
+      nome.hashCode ^
+      chavePix.hashCode ^
+      criadorId.hashCode ^
+      latitude.hashCode;
 }

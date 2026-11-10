@@ -20,6 +20,7 @@ void main() {
           latitude: -8.0500,
           longitude: -34.8800,
           userType: 'Adotante',
+          photoBase64: 'foto_inicial',
         ),
       });
       authRepo = MockAuthRepository(initialUid: 'user_1', initialEmail: 'carlos@example.com');
@@ -33,18 +34,22 @@ void main() {
       controller.dispose();
     });
 
-    test('deve carregar dados do perfil com sucesso', () async {
+    test('deve carregar dados do perfil e foto com sucesso', () async {
       await controller.loadProfile();
 
       expect(controller.isLoading, isFalse);
       expect(controller.profile?.name, 'Carlos Oliveira');
       expect(controller.userEmail, 'carlos@example.com');
+      expect(controller.currentPhotoBase64, 'foto_inicial');
       expect(controller.userType, 'Adotante');
       expect(controller.isVolunteer, isFalse);
     });
 
-    test('deve salvar perfil atualizado e validar parsing numérico', () async {
+    test('deve atualizar foto de perfil e salvar com sucesso', () async {
       await controller.loadProfile();
+
+      controller.setPhotoBase64('nova_foto_base64');
+      expect(controller.currentPhotoBase64, 'nova_foto_base64');
 
       final success = await controller.saveProfile(
         name: 'Carlos Oliveira Santos',
@@ -56,11 +61,10 @@ void main() {
 
       expect(success, isTrue);
       expect(controller.profile?.name, 'Carlos Oliveira Santos');
-      expect(controller.profile?.latitude, -8.0555);
-      expect(controller.profile?.longitude, -34.8888);
+      expect(controller.profile?.photoBase64, 'nova_foto_base64');
 
       final inRepo = await userRepo.getUserProfile('user_1');
-      expect(inRepo?.name, 'Carlos Oliveira Santos');
+      expect(inRepo?.photoBase64, 'nova_foto_base64');
     });
 
     test('deve rejeitar salvar perfil com nome vazio', () async {

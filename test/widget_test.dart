@@ -22,11 +22,13 @@ void main() {
     ]);
     final userRepo = MockUserRepository();
     final authRepo = MockAuthRepository();
+    final shelterRepo = MockShelterRepository();
 
     final controller = HomeController(
       petRepository: petRepo,
       userRepository: userRepo,
       authRepository: authRepo,
+      shelterRepository: shelterRepo,
     );
 
     await tester.pumpWidget(
