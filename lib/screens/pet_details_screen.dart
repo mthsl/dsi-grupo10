@@ -10,11 +10,13 @@ import '../models/shelter_model.dart';
 import '../repositories/interfaces/auth_repository.dart';
 import '../repositories/interfaces/pet_repository.dart';
 import '../repositories/interfaces/shelter_repository.dart';
+import '../repositories/interfaces/user_repository.dart';
 import '../repositories/firebase/firebase_auth_repository.dart';
 import '../repositories/firebase/firebase_pet_repository.dart';
 import '../repositories/firebase/firebase_shelter_repository.dart';
 import '../services/favorite_service.dart';
 import 'edit_pet_screen.dart';
+import 'shelter_details_screen.dart';
 
 /// Tela de Detalhes do Pet (View pura - SRP / DIP).
 class PetDetailsScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class PetDetailsScreen extends StatefulWidget {
   final IPetRepository? petRepository;
   final IShelterRepository? shelterRepository;
   final IAuthRepository? authRepository;
+  final IUserRepository? userRepository;
 
   PetDetailsScreen({
     super.key,
@@ -31,6 +34,7 @@ class PetDetailsScreen extends StatefulWidget {
     this.petRepository,
     this.shelterRepository,
     this.authRepository,
+    this.userRepository,
   }) : pet = pet ??
             PetModel.fromMap(
               petData ?? const {},
@@ -59,6 +63,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
     _favoriteService = FavoriteService(
       petRepository: _petRepository,
       authRepository: _authRepository,
+      userRepository: widget.userRepository,
     );
     _loadShelter();
   }
@@ -264,17 +269,70 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
                     const Center(child: CircularProgressIndicator(color: Colors.orange))
                   else if (_shelter != null) ...[
                     const Text(
-                      'Localização do Abrigo',
+                      'Abrigo responsável',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _shelter!.nome,
-                      style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ShelterDetailsScreen(shelter: _shelter!),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.orange.withValues(alpha: 0.2),
+                              child: const Icon(Icons.home_work, color: Colors.orange, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _shelter!.nome,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (_shelter!.endereco.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _shelter!.endereco,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Toque para ver todas as informações do abrigo',
+                                    style: TextStyle(color: Colors.orange, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.orange),
+                          ],
+                        ),
+                      ),
                     ),
-                    if (_shelter!.endereco.isNotEmpty)
-                      Text(_shelter!.endereco, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     // Chave Pix para Doações
                     if (_shelter!.hasPix) ...[
