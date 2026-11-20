@@ -1,16 +1,17 @@
-# 🐾 AdotaÍ - Aplicativo de Adoção de Animais
+# adotai_app 
 
-Projeto desenvolvido para a disciplina de **Desenvolvimento de Sistemas de Informação (DSI)** - Período 2026.2.
+Repositório utilizado pelo grupo 10, na disciplina de DESENVOLVIMENTO DE SISTEMAS DE INFORMAÇÃO (2026.2).
 
-## 📌 Sobre o Projeto
-O **AdotaÍ** é uma plataforma mobile criada para aproximar protetores/ONGs de pessoas interessadas em adotar pets, oferecendo visualização por cards, busca filtrada e formulários simples de candidatura.
+## Getting Started
 
-## 🛠️ Tecnologias
-- Flutter / Dart
-- Clean Architecture (Feature-First)
+This project is a starting point for a Flutter application.
 
-## 🚀 Como Executar o Projeto
+A few resources to get you started if this is your first Flutter project:
 
-1. Clone o repositório:
-   ```bash
-   git clone [https://github.com/mthsl/dsi-grupo10.git](https://github.com/mthsl/dsi-grupo10.git)
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
